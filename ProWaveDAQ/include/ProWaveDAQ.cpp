@@ -157,8 +157,7 @@ void ProWaveDAQ::readLoop() {
         lestLen = thisLen;
         if (vib_data[0] >= maxSize) {
             modbus_read_input_registers(ctx, 0x02, maxSize + 1, vib_data);
-            thisLen = vib_data[0];
-            continue;
+            thisLen = maxSize;
         } else if (vib_data[0] <= 6) {
             usleep(1000);
             modbus_read_input_registers(ctx, 0x02, 1, vib_data);
