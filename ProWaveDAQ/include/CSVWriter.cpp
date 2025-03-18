@@ -57,15 +57,10 @@ string CSVWriter::generateFilename() {
 #else
     localtime_r(&now_time, &local_time); // POSIX function
 #endif
-
-    // Get milliseconds (0-999)
-    auto now_ms = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()) % 1000;
-
     // Construct the filename with timestamp and label
     ostringstream oss;
     oss << outputDir << "/"
         << put_time(&local_time, "%Y%m%d%H%M%S")  // Year-Month-Day Hour-Minute-Second
-        << setfill('0') << setw(3) << now_ms.count() // Ensure 3-digit milliseconds
         << "_" << label << ".csv";
 
     return oss.str();

@@ -145,38 +145,38 @@ void ProWaveDAQ::stopReading() {
 
 // **Read vibration data (main reading loop)**
 void ProWaveDAQ::readLoop() {
-    int prev_data_len = 0;
     int maxSize = 41 * 3;
-    int saveLen = 0;
-    int dropCounter = 0;
     uint16_t vib_data[maxSize + 1];
     modbus_read_input_registers(ctx, 0x02, 1, vib_data);
-    saveLen = vib_data[0];
-    cout << "Data Length: " << dec << vib_data[0] << endl;
+    int thisLen = vib_data[0];
+    int lestLen;
+    cout << "Data Length: " << dec << thisLen << endl;
 
     cout << "Reading loop started..." << endl;
     while (reading) {
-        auto start_time = chrono::high_resolution_clock::now();
-
+        lestLen = thisLen;
         if (vib_data[0] >= maxSize) {
             modbus_read_input_registers(ctx, 0x02, maxSize + 1, vib_data);
+            thisLen = vib_data[0];
+            continue;
         } else if (vib_data[0] <= 6) {
             usleep(1000);
             modbus_read_input_registers(ctx, 0x02, 1, vib_data);
+            thisLen = vib_data[0];
             continue;
         } else {
             modbus_read_input_registers(ctx, 0x02, vib_data[0] + 1, vib_data);
+            thisLen = vib_data[0];
         }
 
         lock_guard<mutex> lock(dataMutex);
         latestData.clear();
 
-        for (int i = 1; i <= saveLen; i++) {
+        for (int i = 1; i <= lestLen; i++) {
             latestData.push_back(static_cast<double>(static_cast<int16_t>(vib_data[i])) / 8192.0);
         }
 
         counter++;
-        saveLen = vib_data[0];
     }
 }
 

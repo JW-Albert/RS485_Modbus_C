@@ -19,7 +19,7 @@ namespace fs = filesystem;
 struct termios original_tty; 
 
 // Set terminal to non-blocking mode
-void setNonBlockingMode() {
+void setNonBlockingMode( void ) {
     struct termios tty;
     tcgetattr(STDIN_FILENO, &tty);  // Get the current terminal attributes
     original_tty = tty;             // Store original settings for later restoration
@@ -32,7 +32,7 @@ void setNonBlockingMode() {
 }
 
 // Restore original terminal settings
-void resetTerminalMode() {
+void resetTerminalMode( void ) {
     tcsetattr(STDIN_FILENO, TCSANOW, &original_tty); // Restore original settings
 
     // Remove the O_NONBLOCK flag to return to blocking mode
@@ -41,7 +41,7 @@ void resetTerminalMode() {
 }
 
 // Get current time as a formatted string (YYYYMMDDHHMMSS)
-string getCurrentTime() {
+string getCurrentTime( void ) {
     auto now = chrono::system_clock::now();
     time_t now_time = chrono::system_clock::to_time_t(now);
     struct tm localTime;
@@ -52,7 +52,7 @@ string getCurrentTime() {
     return string(buffer);
 }
 
-int main() {
+int main( void ) {
     ProWaveDAQ daq;
 
     while (true) {
@@ -83,7 +83,6 @@ int main() {
         int prevCounter = 0;
 
         daq.startReading();
-        usleep(200000);
 
         system("clear"); // Clear terminal screen for better readability
         cout << "============================== Label Creation ============================" << endl;
@@ -92,7 +91,7 @@ int main() {
         cin >> label;
         string folder = getCurrentTime() + "_" + label;
         if (label == "exit") {
-            break;
+            return 1;
         }
 
         fs::create_directory("output/ProWaveDAQ/" + folder);
@@ -105,7 +104,9 @@ int main() {
         bool isRunning = true;
         int dataSize = 0;
 
-        while (isRunning) {
+        cout << "============================== Data Acquisition ============================" << endl;
+        cout << "Press 'Q' to exit..." << endl;
+        while ( isRunning ) {
             int currentCounter = daq.getCounter();
 
             if (read(STDIN_FILENO, &ch, 1) > 0) {
@@ -113,7 +114,7 @@ int main() {
                     isRunning = false;
                     cout << "Saving final data before exit..." << endl;
                     resetTerminalMode(); // Restore terminal settings before exiting
-                    break;
+                    return 1;
                 }
                 cout << "You pressed: " << ch << endl;
             }
@@ -121,7 +122,7 @@ int main() {
             // **Only process new data when the counter changes**
             if (currentCounter > prevCounter) {
                 vector<double> data = daq.getData();
-                dataSize += data.size();
+                dataSize += data.size(); 
 
                 if (dataSize < targetSize) {
                     csvWriter.addDataBlock(move(data));
@@ -144,7 +145,7 @@ int main() {
                     int pending = dataActualSize - emptySpace;
 
                     // **Handle remaining data that is less than targetSize**
-                    if (pending) {
+                    if ( pending ) {
                         vector<double> remainingData(data.begin() + emptySpace, data.end());
                         csvWriter.addDataBlock(move(remainingData));
                         dataSize = pending;
